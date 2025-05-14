@@ -34,7 +34,7 @@ export default function App() {
   }, [dispatch]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Navbar />
       <AppRoutes />
       <Footer />
