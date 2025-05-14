@@ -38,7 +38,7 @@ export default function App() {
       <Navbar />
       <AppRoutes />
       <Footer />
-      <ToastContainer autoClose={300} hideProgressBar />
+      <ToastContainer autoClose={3000} hideProgressBar />
     </BrowserRouter>
   );
 }
