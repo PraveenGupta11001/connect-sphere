@@ -85,7 +85,7 @@ export default function Home() {
           )}
   
           <Link
-            to="/faq"
+            to=""
             className="bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl shadow-md p-6 hover:scale-105 transform transition duration-300"
           >
             <h2 className="text-xl font-semibold">FAQs</h2>
