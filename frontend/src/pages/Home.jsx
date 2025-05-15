@@ -26,7 +26,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center text-white bg-gradient-to-br from-gray-900 via-black to-gray-900">
+    <div className="w-full min-h-screen flex flex-col items-center justify-center text-white bg-white">
       <div className="w-full max-w-6xl p-4 text-center">
         {/* Slide Carousel */}
         <motion.div
