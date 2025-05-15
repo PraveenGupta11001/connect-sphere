@@ -1,7 +1,8 @@
 #### Installation
-> npm install tailwindcss @tailwindcss/vite redux react-redux @reduxjs/toolkit react-router-dom axios react-toastify
+> npm install tailwindcss @tailwindcss/vite redux react-redux @reduxjs/toolkit axios react-toastify
 - npm install lucide-react
 - npm install firebase
+- npm install framer-motion
 
 
 #### Color palletes & Themes
@@ -43,4 +44,55 @@ Black - 000000
 #### Chat Page
 - 3A59D1
 - 3D90D7
+
+#### Setting up Firebase OAuth - Authentication
+Github - go to github.com/settings/develper settings/OAuth Apps
+set things 
+Google just easily.
+
+#### remove warning of v7 Router Versioning
+add this - <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+
+#### setup firebase access to specific url to give access
+> sudo nano /etc/hosts
+to add - 127.0.0.1   connectsphere.local
+then install
+- sudo apt update
+- sudo apt install nginx
+
+create file
+sudo nano /etc/nginx/sites-available/connectsphere
+add config material-
+server {
+    listen 80;
+    server_name connectsphere.local;
+
+    location / {
+        proxy_pass http://localhost:5173;  # Vite dev server
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+<>--------------------<>
+Then link it cmds
+sudo ln -s /etc/nginx/sites-available/connectsphere /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+Then domains in firebase like this
+connectsphere.local
+
+and into viteconfig.js files
+// vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0', // to allow access from local network
+    allowedHosts: ['connectsphere.local'], // ✅ allow custom domain
+  },
+})
+
 
