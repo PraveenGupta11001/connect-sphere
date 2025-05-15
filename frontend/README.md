@@ -2,6 +2,8 @@
 > npm install tailwindcss @tailwindcss/vite redux react-redux @reduxjs/toolkit axios react-toastify
 - npm install lucide-react
 - npm install firebase
+- npm install framer-motion
+
 
 #### Color palletes & Themes
 Indigo- 3A59D1
