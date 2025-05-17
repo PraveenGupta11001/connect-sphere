@@ -26,7 +26,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center text-white bg-white">
+    <div className="pt-20 w-full min-h-screen flex flex-col items-center justify-center text-white bg-white">
       <div className="w-full max-w-6xl p-4 text-center">
         {/* Slide Carousel */}
         <motion.div
@@ -76,7 +76,7 @@ export default function Home() {
               </Link>
             </>
           ) : (
-            <div className="col-span-1 sm:col-span-2 md:col-span-1 lg:col-span-1 flex flex-col items-center justify-center bg-gradient-to-r from-cyan-400 to-blue-300 rounded-2xl shadow-md p-6">
+            <div className=" items-center justify-center bg-gradient-to-r from-cyan-400 to-blue-300 rounded-2xl shadow-md p-6">
               <h2 className="text-xl font-semibold">Welcome</h2>
               <p className="text-sm text-center break-words">
                 Logged in as: <strong>{user.email}</strong>
@@ -85,10 +85,10 @@ export default function Home() {
           )}
   
           <Link
-            to=""
+            to="/"
             className="bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl shadow-md p-6 hover:scale-105 transform transition duration-300"
           >
-            <h2 className="text-xl font-semibold">FAQs</h2>
+            <h2 className="text-xl font-semibold">Start Video Call</h2>
             <p className="text-sm">Get help and explore common questions</p>
             <ChevronRight className="mt-2" />
           </Link>
