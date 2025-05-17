@@ -34,11 +34,13 @@ export default function App() {
   }, [dispatch]);
 
   return (
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <Navbar />
-      <AppRoutes />
-      <Footer />
-      <ToastContainer autoClose={3000} hideProgressBar />
-    </BrowserRouter>
+    <div className='w-full overflow-x-hidden'>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Navbar />
+        <AppRoutes />
+        <Footer />
+        <ToastContainer autoClose={3000} hideProgressBar />
+      </BrowserRouter>
+    </div>
   );
-}
+} 
