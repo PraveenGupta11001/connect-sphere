@@ -1,7 +1,23 @@
+// src/pages/Signup.jsx
 import { useState } from "react";
 import { signupWithEmail, loginWithGoogle, loginWithGithub } from "../features/auth/firebaseAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebase/config";  // corrected import path
+
+// Helper to save user to Firestore 'users' collection
+export const saveUserToFirestore = async (user) => {
+  if (!user) return;
+
+  const userRef = doc(db, "users", user.uid);
+  await setDoc(userRef, {
+    email: user.email,
+    displayName: user.displayName || user.email,
+    photoURL: user.photoURL || "",
+  }, { merge: true });
+};
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -11,7 +27,8 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      await signupWithEmail(email, password);
+      const userCredential = await signupWithEmail(email, password);
+      await saveUserToFirestore(userCredential.user);
       toast.success("Account created!", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {
@@ -21,7 +38,8 @@ export default function Signup() {
 
   const handleGoogleSignup = async () => {
     try {
-      await loginWithGoogle();
+      const userCredential = await loginWithGoogle();
+      await saveUserToFirestore(userCredential.user);
       toast.success("Signed in with Google", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {
@@ -31,7 +49,8 @@ export default function Signup() {
 
   const handleGithubSignup = async () => {
     try {
-      await loginWithGithub();
+      const userCredential = await loginWithGithub();
+      await saveUserToFirestore(userCredential.user);
       toast.success("Signed in with GitHub", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {

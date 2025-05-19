@@ -4,6 +4,20 @@ import { loginWithEmail } from "../features/auth/firebaseAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../firebase/config";  // <-- fixed import here
+
+export const saveUserToFirestore = async (user) => {
+  if (!user) return;
+
+  const userRef = doc(db, "users", user.uid);
+  await setDoc(userRef, {
+    email: user.email,
+    displayName: user.displayName || user.email,
+    photoURL: user.photoURL || "",
+  }, { merge: true });
+};
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
