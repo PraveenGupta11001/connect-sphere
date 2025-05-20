@@ -1,50 +1,83 @@
+// ChatRoom.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowLeft, CircleChevronLeft, Search, SendHorizontal } from "lucide-react";
-import userIcon from '../assets/user-286.png'
+import {
+  ArrowLeft,
+  MoreVertical,
+  Search,
+  SendHorizontal,
+  Trash2,
+  Copy,
+  Forward,
+  MoreVerticalIcon,
+  Crosshair,
+  CrossIcon,
+  HardDriveIcon,
+  X
+} from "lucide-react";
+import dayjs from "dayjs";
+import userIcon from "../assets/user-286.png";
 import { sendMessage, fetchMessages } from "../features/chat/chatService";
 import { useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import { useParams, Link } from "react-router-dom";
 import { db } from "../firebase/config";
-import { Link } from "react-router-dom";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  deleteDoc,
+} from "firebase/firestore";
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 
 export default function ChatRoom() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const messageContainerRef = useRef(null);
+  const [chatSearch, setChatSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [receiverInfo, setReceiverInfo] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showMenu, setShowMenu] = useState(false);
+  const messageContainerRef = useRef(null);
+
   const user = useSelector((state) => state.auth.user);
   const { chatUserId } = useParams();
 
-  // Fetch receiver user info based on chatUserId param
+  // Fetch users list
   useEffect(() => {
-    if (!chatUserId) return;
-
-    const fetchReceiver = async () => {
-      try {
-        const docSnap = await getDoc(doc(db, "users", chatUserId));
-        if (docSnap.exists()) {
-          setReceiverInfo(docSnap.data());
-        } else {
-          setReceiverInfo(null);
-        }
-      } catch (error) {
-        console.error("Error fetching receiver info:", error);
-      }
+    const fetchUsers = async () => {
+      const snapshot = await getDocs(collection(db, "users"));
+      const userList = snapshot.docs.map((doc) => ({
+        uid: doc.id,
+        ...doc.data(),
+      }));
+      setUsers(userList);
     };
+    fetchUsers();
+  }, []);
 
+  const filteredUsers = users
+    .filter((u) => u.uid !== user?.uid)
+    .filter((u) =>
+      u.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+  // Fetch receiver info
+  useEffect(() => {
+    const fetchReceiver = async () => {
+      if (!chatUserId) return;
+      const docSnap = await getDoc(doc(db, "users", chatUserId));
+      if (docSnap.exists()) setReceiverInfo(docSnap.data());
+    };
     fetchReceiver();
   }, [chatUserId]);
 
-  // Listen for real-time messages filtered between logged-in user and receiver
+  // Fetch & filter messages
   useEffect(() => {
-    if (!user?.email || !receiverInfo?.email) {
-      setMessages([]);
-      return;
-    }
+    if (!user?.email || !receiverInfo?.email) return;
 
     const unsubscribe = fetchMessages((msgs) => {
-      // Filter messages between these two users only
       const filtered = msgs.filter(
         (m) =>
           (m.sender === user.email && m.receiver === receiverInfo.email) ||
@@ -56,114 +89,207 @@ export default function ChatRoom() {
     return () => unsubscribe();
   }, [user, receiverInfo]);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll
   useEffect(() => {
     const container = messageContainerRef.current;
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
+    if (container) container.scrollTop = container.scrollHeight;
   }, [messages]);
 
-  // Send message handler
   const handleSend = async () => {
-    if (!input.trim() || !user?.email || !receiverInfo?.email) return;
-
-    try {
-      await sendMessage(user.email, receiverInfo.email, input.trim());
-      setInput("");
-    } catch (error) {
-      console.error("Send message failed:", error);
-    }
+    if (!input.trim()) return;
+    await sendMessage(user.email, receiverInfo.email, input.trim());
+    setInput("");
   };
 
-  // Send message on Enter key press
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === "Enter") handleSend();
   };
 
-  if (!user) return <div>Loading...</div>;
-  if (!receiverInfo) return <div className="p-4">Select a user to chat with.</div>;
+  const formatDate = (date) => {
+    const today = dayjs();
+    const msgDate = dayjs(date);
+    if (msgDate.isSame(today, "day")) return "Today";
+    if (msgDate.isSame(today.subtract(1, "day"), "day")) return "Yesterday";
+    return msgDate.format("DD MMM YYYY");
+  };
+
+  const filteredMessages = chatSearch
+    ? messages.filter((m) =>
+        m.text.toLowerCase().includes(chatSearch.toLowerCase())
+      )
+    : messages;
+
+  let lastDate = "";
+
+  const handleDelete = async (id) => {
+    await deleteDoc(doc(db, "messages", id));
+  };
+
+  const handleCopy = (text) => {
+    // navigator.clipboard.writeText(text);
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      // console.log("Text copied manually:", text);
+    } catch (err) {
+      console.error("Fallback: Oops, unable to copy", err);
+    }
+  };
 
   return (
-    <div className="pt-15 h-screen grid grid-cols-1 md:grid-cols-3 overflow-hidden">
+    <div className="h-screen grid grid-cols-1 md:grid-cols-4">
       {/* Sidebar */}
-      <div className="hidden md:flex flex-col p-4 border-r md:col-span-1 bg-white">
-        <div className="relative mb-4">
-          <input
-            type="search"
-            placeholder="Search chats..."
-            className="w-full pl-4 pr-10 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm"
-          />
-          <Search size={20} className="absolute right-3 top-2.5 text-gray-500" />
-        </div>
-
-        {/* Receiver info box (static for now) */}
-        <div className="flex items-center gap-2 py-2 px-2 hover:bg-gray-200 rounded-lg cursor-pointer">
-          <img
-            src={receiverInfo.photoURL || userIcon}
-            alt="User"
-            className="h-10 w-10 rounded-full"
-          />
-          <span>{receiverInfo.displayName || "Loading..."}</span>
+      <div className="hidden md:flex flex-col p-4 border-r bg-white">
+        <input
+          type="text"
+          placeholder="Search users..."
+          className="mb-4 p-2 border rounded-full"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <div className="space-y-2 overflow-y-auto">
+          {filteredUsers.map((u) => (
+            <Link
+              key={u.uid}
+              to={`/chat/${u.uid}`}
+              className={`flex items-center gap-2 p-2 rounded-lg ${
+                chatUserId === u.uid ? "bg-gray-200" : "hover:bg-gray-100"
+              }`}
+            >
+              <img
+                src={u.photoURL || userIcon}
+                alt=""
+                className="h-10 w-10 rounded-full"
+              />
+              <span className="truncate">{u.displayName}</span>
+            </Link>
+          ))}
         </div>
       </div>
 
       {/* Chat Panel */}
-      <div className="flex flex-col md:col-span-2 bg-gray-100 h-screen">
+      <div className="relative top-16 col-span-3 flex flex-col bg-gray-50">
         {/* Header */}
-        <div className="flex items-center gap-2 border-b p-4 bg-white shadow-md">
-        <Link to="/chat/"><ArrowLeft size={25} className="text-gray-500" /></Link>
-          <img
-            src={receiverInfo.photoURL || userIcon}
-            alt="User"
-            className="h-12 w-12 rounded-full"
-          />
-          <h3 className="text-lg font-semibold">{receiverInfo.displayName || "Loading..."}</h3>
+        <div className="flex items-center justify-between px-4 py-3 bg-white shadow">
+          <div className="flex items-center gap-3">
+            <Link to="/chat">
+              <ArrowLeft size={24} className="text-gray-600" />
+            </Link>
+            <img
+              src={receiverInfo?.photoURL || userIcon}
+              alt="User"
+              className="h-10 w-10 rounded-full"
+            />
+            <h2 className="text-lg font-semibold">
+              {receiverInfo?.displayName || "User"}
+            </h2>
+          </div>
+
+          {/* Three Dots Menu */}
+          <div className="relative">
+            <button onClick={() => setShowMenu(!showMenu)}>
+              <MoreVertical />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-40 bg-white shadow rounded-lg text-sm z-10">
+                <button
+                  className="w-full px-4 py-2 hover:bg-gray-100 text-left"
+                  onClick={() => {
+                    setShowSearch(true);
+                    setShowMenu(false);
+                  }}
+                >
+                  🔍 Search in chat
+                </button>
+            
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Messages container */}
+        {/* Search bar (only when enabled) */}
+        {showSearch && (
+          <div className="px-4 py-2 bg-white border-b shadow-sm flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search message..."
+              value={chatSearch}
+              onChange={(e) => setChatSearch(e.target.value)}
+              className="w-full p-2 border rounded-full"
+            />
+            <X size={32} className="font-semibold hover:text-indigo-500 transition" onClick={()=>{setShowSearch(false);setShowMenu(false);}} />
+          </div>
+        )}
+
+        {/* Messages */}
         <div
-          className="flex-1 overflow-y-auto px-4 py-2 mb-17 space-y-2"
           ref={messageContainerRef}
-          style={{ maxHeight: "calc(100vh - 220px)" }}
+          className="flex-1 overflow-y-auto px-4 py-2 space-y-2"
+          style={{ maxHeight: "65vh" }}
         >
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`p-3 rounded-lg max-w-xs break-words whitespace-pre-wrap overflow-hidden ${
-                msg.sender === user.email
-                  ? "bg-indigo-500 text-white self-end ml-auto"
-                  : "bg-white text-black self-start"
-              }`}
-            >
-              <p>{msg.text}</p>
-              <span className="text-xs block mt-1 opacity-60">
-                {msg.timestamp?.toDate?.().toLocaleTimeString() || "..."}
-              </span>
-            </div>
-          ))}
+          {filteredMessages.map((msg, index) => {
+            const msgDate = msg.timestamp?.toDate();
+            const showDate = formatDate(msgDate) !== lastDate;
+            if (showDate) lastDate = formatDate(msgDate);
+
+            return (
+              <div key={msg.id}>
+                {showDate && (
+                  <div className="text-center text-gray-500 text-sm mb-2">
+                    {lastDate}
+                  </div>
+                )}
+
+                <div
+                  className={`group relative p-3 rounded-lg max-w-[70%] break-words whitespace-pre-wrap ${
+                    msg.sender === user.email
+                      ? "ml-auto bg-indigo-500 text-white"
+                      : "mr-auto bg-white text-black"
+                  }`}
+                >
+                  <p>{msg.text}</p>
+                  <div className="text-xs text-right mt-1 opacity-70">
+                    {dayjs(msg.timestamp?.toDate()).format("HH:mm")}
+                  </div>
+
+                  {/* Message Options */}
+                  <div className="absolute top-0 right-0 hidden group-hover:flex gap-2 bg-gray-500 p-1 rounded-bl-lg shadow-md">
+                    <button onClick={() => handleDelete(msg.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                    <button onClick={() => handleCopy(msg.text)}>
+                      <Copy size={16} />
+                    </button>
+                    <button onClick={() => alert("Forwarded (mock)")}>
+                      <Forward size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Input box */}
-        <div className="sticky bottom-0 left-0 right-0 bg-white border-t p-4 flex items-center gap-2">
+        {/* Input */}
+        <div className="p-4 border-t bg-white flex items-center gap-2">
           <input
             type="text"
-            placeholder="Write a message..."
-            className="flex-grow border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-sm"
+            placeholder="Type a message..."
+            className="flex-1 border rounded-full px-4 py-2"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
           />
           <button
             onClick={handleSend}
+            className="bg-indigo-500 hover:bg-indigo-600 text-white p-2 rounded-full"
             disabled={!input.trim()}
-            className="rounded-full bg-indigo-500 p-2 hover:bg-indigo-600 disabled:opacity-50"
-            aria-label="Send message"
           >
-            <SendHorizontal size={22} color="white" />
+            <SendHorizontal />
           </button>
         </div>
       </div>
