@@ -134,16 +134,16 @@ export default function ChatRoom() {
       textArea.select();
       document.execCommand("copy");
       document.body.removeChild(textArea);
-      // console.log("Text copied manually:", text);
+      console.log("Text copied manually:", text);
     } catch (err) {
       console.error("Fallback: Oops, unable to copy", err);
     }
   };
 
   return (
-    <div className="h-screen grid grid-cols-1 md:grid-cols-4">
+    <div style={{height: "80vw"}} className="grid grid-cols-1 md:grid-cols-3">
       {/* Sidebar */}
-      <div className="hidden md:flex flex-col p-4 border-r bg-white">
+      <div  style={{height: "85vh"}} className="overflow-y-auto hidden md:flex flex-col p-4 border-r bg-white">
         <input
           type="text"
           placeholder="Search users..."
@@ -172,7 +172,7 @@ export default function ChatRoom() {
       </div>
 
       {/* Chat Panel */}
-      <div className="relative top-16 col-span-3 flex flex-col bg-gray-50">
+      <div className="relative top-16 col-span-2 flex flex-col bg-gray-50">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-white shadow">
           <div className="flex items-center gap-3">
@@ -230,7 +230,7 @@ export default function ChatRoom() {
           ref={messageContainerRef}
           className="flex-1 overflow-y-auto px-4 py-2 space-y-2"
           style={{ maxHeight: "65vh" }}
-        >
+          >
           {filteredMessages.map((msg, index) => {
             const msgDate = msg.timestamp?.toDate();
             const showDate = formatDate(msgDate) !== lastDate;
