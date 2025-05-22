@@ -9,6 +9,7 @@ import { clearUser } from "../features/auth/authSlice";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const user = useSelector((state) => state.auth.user);
+  console.log(user)
   const dispatch = useDispatch();
 
   const handleLogout = async () => {
@@ -38,8 +39,12 @@ export default function Navbar() {
               <Link to="/signup" className="text-gray-700 hover:text-indigo-600">Sign Up</Link>
             </>
           ) : (
-            <button onClick={handleLogout} className="text-red-600 hover:underline">Logout</button>
+            <div className="flex space-x-5">
+              <button className="text-gray-700 hover:text-indigo-600 transition">{user.email}</button>
+              <button onClick={handleLogout} className="text-red-600 hover:underline">Logout</button>
+            </div>
           )}
+          
         </nav>
       </div>
 
@@ -53,15 +58,17 @@ export default function Navbar() {
               <Link to="/signup" onClick={() => setIsOpen(false)} className="text-gray-700 hover:text-indigo-600">Sign Up</Link>
             </>
           ) : (
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                handleLogout();
-              }}
-              className="text-red-600 hover:underline"
-            >
-              Logout
-            </button>
+            <div className="flex flex-col gap-2">
+              <Link to="#" onClick={() => setIsOpen(false)} className="text-gray-700 hover:text-indigo-600">{user.email}</Link>
+              <div>
+                <ul>
+                  <li>
+                    <button onClick={() => {setIsOpen(false); handleLogout();}} className="text-red-600 hover:underline"> Logout </button>
+
+                  </li>
+                </ul>
+              </div>
+            </div>
           )}
         </nav>
       )}

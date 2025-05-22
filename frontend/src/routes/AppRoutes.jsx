@@ -12,8 +12,8 @@ export default function AppRoutes() {
       <Route path="/chat" element={<Chat />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/chat/chatrm" element={<ChatRoom />} />
-
+      {/* Dynamic chat room route */}
+      <Route path="/chat/:chatUserId" element={<ChatRoom />} />
     </Routes>
   );
 }

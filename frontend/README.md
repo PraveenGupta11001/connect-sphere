@@ -3,6 +3,10 @@
 - npm install lucide-react
 - npm install firebase
 - npm install framer-motion
+- npm i openai
+- npm i @google/genai
+- npm install dayjs
+
 
 
 #### Color palletes & Themes
