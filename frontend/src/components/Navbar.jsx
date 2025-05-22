@@ -9,6 +9,7 @@ import { clearUser } from "../features/auth/authSlice";
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const user = useSelector((state) => state.auth.user);
+  console.log(user)
   const dispatch = useDispatch();
 
   const handleLogout = async () => {
@@ -59,7 +60,14 @@ export default function Navbar() {
           ) : (
             <div className="flex flex-col gap-2">
               <Link to="#" onClick={() => setIsOpen(false)} className="text-gray-700 hover:text-indigo-600">{user.email}</Link>
-              <button onClick={() => {setIsOpen(false); handleLogout();}} className="text-red-600 hover:underline"> Logout </button>
+              <div>
+                <ul>
+                  <li>
+                    <button onClick={() => {setIsOpen(false); handleLogout();}} className="text-red-600 hover:underline"> Logout </button>
+
+                  </li>
+                </ul>
+              </div>
             </div>
           )}
         </nav>

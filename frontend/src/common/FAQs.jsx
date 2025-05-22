@@ -21,10 +21,10 @@ export default function FAQs() {
         return (
           <div className='mx-8' key={i}>
             <div
-              className='pt-2 flex justify-between lg:justify-start text-indigo-500 font-semibold cursor-pointer'
+              className='pt-2 grid grid-cols-[95%_1fr] md:grid-cols-[90vw_10vw]  text-indigo-500 font-semibold cursor-pointer transition-all'
               onClick={() => toggleAnswer(item.answer)}
             >
-              <h3>
+              <h3 className='col-span-4/2'>
                 Q{i + 1}. {item.question}
               </h3>
               {isOpen ? <ChevronUp /> : <ChevronDown />}
