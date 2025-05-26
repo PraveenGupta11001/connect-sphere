@@ -1,7 +1,7 @@
 export const slides = [
   {
     id: 1,
-    title: "Welcome to ConnectSphere",
+    title: "Welcome to WeConnect",
     subtitle: "A world where people connect, chat, and grow together.",
     color: "from-purple-500 to-pink-500",
   },

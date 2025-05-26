@@ -213,17 +213,17 @@ export default function ChatRoom() {
         className="hidden md:flex flex-col p-6 border-r border-gray-200 bg-white"
         style={{ height: "calc(100vh - 64px)" }}
       >
-        <div className="sticky top-0 z-10 bg-white pb-4">
+        <div className="fixed w-[29vw] lg:w-[22vw] p-2 ml-2 top-20 z-10 bg-white pb-4">
           <input
             type="text"
-            placeholder="Search users by name or email..."
+            placeholder="Search users..."
             className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div
-          className="space-y-2 overflow-y-auto"
+          className="space-y-2 mt-15 overflow-y-auto"
           style={{ maxHeight: "calc(100vh - 180px - 64px)" }}
         >
           {filteredUsers.map((u) => (
@@ -248,7 +248,7 @@ export default function ChatRoom() {
       {/* Chat Panel */}
       <div className="col-span-1 md:col-span-2 flex flex-col bg-gray-100" style={{ maxHeight: "calc(100vh - 120px - 64px)" }}>
         {/* Header */}
-        <div className="fixed top-16 left-0 right-0 z-20 bg-white shadow-md p-4 ml-0 md:ml-[33.3%]">
+        <div className="fixed top-16 left-0 right-0 z-20 bg-white shadow-md p-4 ml-0 md:ml-[33.3%] lg:ml-[35.7%] lg:w-[57vw]">
           <div className="flex items-center justify-between max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 z-30">
               <Link to="/chat">
