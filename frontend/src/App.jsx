@@ -34,13 +34,15 @@ export default function App() {
   }, [dispatch]);
 
   return (
-    <div className='w-full overflow-x-hidden'>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Navbar />
-        <AppRoutes />
-        <Footer />
-        <ToastContainer autoClose={3000} hideProgressBar />
-      </BrowserRouter>
+    <div className='w-full'>
+      <div className='lg:w-[85%] lg:m-auto overflow-x-hidden'>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Navbar />
+          <AppRoutes />
+          <Footer />
+          <ToastContainer autoClose={3000} hideProgressBar />
+        </BrowserRouter>
+      </div>
     </div>
   );
 } 
