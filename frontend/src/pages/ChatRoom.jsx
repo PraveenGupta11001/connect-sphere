@@ -210,10 +210,10 @@ export default function ChatRoom() {
       {/* Sidebar */}
       <div
         ref={sidebarRef}
-        className="hidden md:flex flex-col p-6 border-r border-gray-200 bg-white"
-        style={{ height: "calc(100vh - 64px)" }}
+        className="hidden md:flex flex-col p-4 border-r border-gray-200 bg-white"
+        style={{ height: "calc(100vh4 - 64px)" }}
       >
-        <div className="fixed w-[29vw] lg:w-[22vw] p-2 ml-2 top-20 z-10 bg-white pb-4">
+        <div className="fixed w-[28vw] lg:w-[25.2vw]  pl-2 ml-2 pt-3 pr-2 top-16 left-0 lg:left-0 xl:left-0 2xl:left-38 z-10 bg-white pb-4">
           <input
             type="text"
             placeholder="Search users..."
@@ -224,7 +224,7 @@ export default function ChatRoom() {
         </div>
         <div
           className="space-y-2 mt-15 overflow-y-auto"
-          style={{ maxHeight: "calc(100vh - 180px - 64px)" }}
+          style={{ maxHeight: "calc(100vh - 200px)" }}
         >
           {filteredUsers.map((u) => (
             <Link
@@ -246,7 +246,9 @@ export default function ChatRoom() {
       </div>
 
       {/* Chat Panel */}
-      <div className="col-span-1 md:col-span-2 flex flex-col bg-gray-100" style={{ maxHeight: "calc(100vh - 120px - 64px)" }}>
+      <div className="col-span-1 md:col-span-2 flex flex-col bg-gray-100" 
+      style={{ maxHeight: "calc(100vh - 90px)" }}
+      >
         {/* Header */}
         <div className="fixed top-16 left-0 right-0 z-20 bg-white shadow-md p-4 ml-0 md:ml-[33.3%] lg:ml-[35.7%] lg:w-[57vw]">
           <div className="flex items-center justify-between max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -314,7 +316,7 @@ export default function ChatRoom() {
         {/* Messages */}
         <div
           ref={messageContainerRef}
-          className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3 mt-36 md:mt-32"
+          className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3 mt-3 md:mt-18"
           style={{ maxHeight: "calc(100vh - 200px)" }}
         >
           {filteredMessages.map((msg, index) => {

@@ -13,7 +13,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
 
-  console.log(user)
+  // console.log(user)
   const dispatch = useDispatch();
 
   const handleLogout = async () => {
