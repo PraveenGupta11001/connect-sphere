@@ -31,7 +31,7 @@ export default function Navbar() {
     <header className="bg-white shadow-md fixed top-0 left-0  right-0 z-50 ">
       <div className="max-w-8xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link to="/" className="text-2xl font-bold text-indigo-600 tracking-wide">
-          ConnectSphere
+          WeConnect
         </Link>
 
         <div className="md:hidden">

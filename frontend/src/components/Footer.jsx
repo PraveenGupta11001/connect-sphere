@@ -9,7 +9,7 @@ export default function Footer() {
       <div className="max-w-8xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
         {/* Logo & Brand */}
         <div className="mb-4 md:mb-0 text-center md:text-left">
-          <h2 className="text-xl font-semibold text-indigo-600">ConnectSphere</h2>
+          <h2 className="text-xl font-semibold text-indigo-600">WeConnect</h2>
           <p className="text-sm text-gray-500 mt-1">Connecting people, one message at a time.</p>
         </div>
 
@@ -31,7 +31,7 @@ export default function Footer() {
       </div>
 
       <div className="text-center py-4 text-xs text-gray-400 border-t border-gray-200">
-        &copy; {new Date().getFullYear()} ConnectSphere. All rights reserved.
+        &copy; {new Date().getFullYear()} WeConnect. All rights reserved.
       </div>
     </footer>
   );
