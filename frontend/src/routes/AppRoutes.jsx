@@ -36,9 +36,6 @@ export default function AppRoutes() {
       <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
 
       {/* Catch-all 404 */}
-      <Route path="*" element={
-          <img src={errPage} alt="Error 404: Page Not Found" className="mx-auto max-w-full w-11/12 sm:w-4/5 md:w-3/5 lg:w-2/5 my-20"/>
-      } />
-    </Routes>
+      <Route path="*" element={<img src={errPage} alt="Error 404: Page Not Found" className="mx-auto max-w-full w-11/12 sm:w-4/5 md:w-3/5 lg:w-2/5 my-20"/>} /> </Routes>
   );
 }

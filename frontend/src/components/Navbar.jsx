@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
@@ -6,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { logoutUser } from "../features/auth/firebaseAuth";
 import { clearUser } from "../features/auth/authSlice";
 import { toast } from "react-toastify";
+import userIconImg from "../assets/user-286.png";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +14,6 @@ export default function Navbar() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // Helper to get display name or email prefix
   const getDisplayName = () => {
     if (!user) return "";
     if (user.displayName && user.displayName.trim() !== "") {
@@ -29,7 +28,7 @@ export default function Navbar() {
     try {
       await logoutUser();
       dispatch(clearUser());
-      navigate("/login"); // Navigate to login after logout
+      navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Failed to logout");
@@ -37,14 +36,13 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    // Close user options dropdown when user changes
+    setIsOpen(false);
     setShowOpt(false);
   }, [user]);
 
-  // Close dropdown when clicking outside (optional)
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest("#user-options-button") && !event.target.closest("#user-options-dropdown")) {
+      if (!event.target.closest("#user-icon-button") && !event.target.closest("#menu-dropdown")) {
         setShowOpt(false);
       }
     };
@@ -65,19 +63,7 @@ export default function Navbar() {
           WeConnect
         </Link>
 
-        {/* Mobile menu toggle */}
-        <div className="md:hidden">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="focus:outline-none"
-            aria-label="Toggle menu"
-            aria-expanded={isOpen}
-          >
-            {isOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
-        </div>
-
-        {/* Desktop nav */}
+        {/* Desktop nav (for tablet/laptop) */}
         <nav className="hidden md:flex space-x-6 items-center">
           <Link to="/" className="text-gray-700 hover:text-indigo-600 transition">
             Home
@@ -88,93 +74,138 @@ export default function Navbar() {
 
           {!user ? (
             <>
-              <Link to="/login" className="text-gray-700 hover:text-indigo-600">
+              <Link to="/login" className="text-gray-700 hover:text-indigo-600 transition">
                 Login
               </Link>
-              <Link to="/signup" className="text-gray-700 hover:text-indigo-600">
+              <Link to="/signup" className="text-gray-700 hover:text-indigo-600 transition">
                 Sign Up
               </Link>
-              
             </>
-          ) : (
-            <div className="relative">
-              <button
-                id="user-options-button"
-                onClick={() => setShowOpt(!showOpt)}
-                className="text-gray-700 hover:text-indigo-600 transition"
-                aria-haspopup="true"
-                aria-expanded={showOpt}
-              >
-                {getDisplayName()}
-              </button>
+          ) : null}
 
-              {showOpt && (
-                <div
-                  id="user-options-dropdown"
-                  className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-gray-200 p-4 z-50"
-                >
-                  <button
-                    onClick={() => {
-                      navigate("/profile");
-                      setShowOpt(false);
-                    }}
-                    className="block w-full text-left text-black border border-gray-200 rounded-xl py-2 px-3 mb-2 hover:bg-indigo-200"
-                  >
-                    Profile
-                  </button>
-                    
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setShowOpt(false);
-                    }}
-                    className="block w-full text-left text-red-600 border border-gray-200 rounded-xl py-2 px-3 hover:bg-indigo-200"
-                  >
-                    Logout
-                  </button>
+          {/* User icon at the end */}
+          <div className="relative">
+            <button
+              id="user-icon-button"
+              onClick={() => setShowOpt(!showOpt)}
+              className="focus:outline-none"
+              aria-label="User menu"
+              aria-expanded={showOpt}
+            >
+              <img
+                src={user?.photoURL || userIconImg}
+                alt="User"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            </button>
+
+            {showOpt && user && (
+              <div
+                id="menu-dropdown"
+                className="absolute right-0 top-12 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 p-4 z-50"
+              >
+                <div className="text-gray-700 font-semibold px-3 py-2 border-b border-gray-200">
+                  {getDisplayName()}
                 </div>
-              )}
-            </div>
-          )}
+                <button
+                  onClick={() => {
+                    navigate("/profile");
+                    setShowOpt(false);
+                  }}
+                  className="block w-full text-left text-black border border-gray-200 rounded-xl py-2 px-3 mt-2 mb-2 hover:bg-indigo-200"
+                >
+                  Profile
+                </button>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setShowOpt(false);
+                  }}
+                  className="block w-full text-left text-red-600 border border-gray-200 rounded-xl py-2 px-3 hover:bg-indigo-200"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
+
+        {/* Mobile view (smaller screens) */}
+        <div className="md:hidden flex items-center space-x-3">
+          {user && (
+            <button
+              onClick={() => navigate("/profile")}
+              className="focus:outline-none"
+              aria-label="Go to profile"
+            >
+              <img
+                src={user.photoURL || userIconImg}
+                alt="User"
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            </button>
+          )}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="focus:outline-none"
+            aria-label="Toggle menu"
+            aria-expanded={isOpen}
+          >
+            {isOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}
       {isOpen && (
         <nav className="md:hidden px-4 pb-4 space-y-3 flex flex-col bg-white shadow">
-          <Link to="/" onClick={() => setIsOpen(false)} className="text-gray-700 hover:text-indigo-600">
+          {user && (
+            <div className="text-gray-700 font-semibold py-2 border-b border-gray-200">
+              {getDisplayName()}
+            </div>
+          )}
+          <Link
+            to="/"
+            onClick={() => setIsOpen(false)}
+            className="text-gray-700 hover:text-indigo-600"
+          >
             Home
           </Link>
-          <Link to="/chat" onClick={() => setIsOpen(false)} className="text-gray-700 hover:text-indigo-600">
+          <Link
+            to="/chat"
+            onClick={() => setIsOpen(false)}
+            className="text-gray-700 hover:text-indigo-600"
+          >
             Chat
           </Link>
 
           {!user ? (
             <>
-              <Link to="/login" onClick={() => setIsOpen(false)} className="text-gray-700 hover:text-indigo-600">
+              <Link
+                to="/login"
+                onClick={() => setIsOpen(false)}
+                className="text-gray-700 hover:text-indigo-600"
+              >
                 Login
               </Link>
-              <Link to="/signup" onClick={() => setIsOpen(false)} className="text-gray-700 hover:text-indigo-600">
+              <Link
+                to="/signup"
+                onClick={() => setIsOpen(false)}
+                className="text-gray-700 hover:text-indigo-600"
+              >
                 Sign Up
               </Link>
             </>
           ) : (
-            <div className="flex flex-col gap-2">
-              <span onClick={()=> {navigate('/profile'); setIsOpen(false);}} className="text-gray-700">{getDisplayName()}</span>
-              <ul>
-                <li>
-                  <button
-                    onClick={() => {
-                      setIsOpen(false);
-                      handleLogout();
-                    }}
-                    className="text-red-600 hover:underline"
-                  >
-                    Logout
-                  </button>
-                </li>
-              </ul>
-            </div>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                handleLogout();
+              }}
+              className="text-red-600 hover:underline text-left"
+            >
+              Logout
+            </button>
           )}
         </nav>
       )}

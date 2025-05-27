@@ -6,6 +6,7 @@
 - npm i openai
 - npm i @google/genai
 - npm install dayjs
+- npm install compressorjs
 
 
 
