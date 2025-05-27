@@ -94,6 +94,7 @@ export default function Navbar() {
               <Link to="/signup" className="text-gray-700 hover:text-indigo-600">
                 Sign Up
               </Link>
+              
             </>
           ) : (
             <div className="relative">
@@ -121,6 +122,7 @@ export default function Navbar() {
                   >
                     Profile
                   </button>
+                    
                   <button
                     onClick={() => {
                       handleLogout();
