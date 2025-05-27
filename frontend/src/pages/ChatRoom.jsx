@@ -7,23 +7,15 @@ import {
   Trash2,
   Copy,
   Forward,
-  X
+  X,
 } from "lucide-react";
 import dayjs from "dayjs";
 import userIcon from "../assets/user-286.png";
 import { sendMessage, fetchMessages } from "../features/chat/chatService";
 import { useSelector } from "react-redux";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { db } from "../firebase/config";
-import {
-  doc,
-  getDoc,
-  getDocs,
-  collection,
-  deleteDoc,
-} from "firebase/firestore";
-import { ResizableBox } from 'react-resizable';
-import 'react-resizable/css/styles.css';
+import { doc, getDoc, deleteDoc, collection, getDocs } from "firebase/firestore";
 
 export default function ChatRoom() {
   const [messages, setMessages] = useState([]);
@@ -32,6 +24,7 @@ export default function ChatRoom() {
   const [showSearch, setShowSearch] = useState(false);
   const [receiverInfo, setReceiverInfo] = useState(null);
   const [users, setUsers] = useState([]);
+  const [conversations, setConversations] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMenu, setShowMenu] = useState(false);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, messageId: null });
@@ -43,27 +36,82 @@ export default function ChatRoom() {
 
   const user = useSelector((state) => state.auth.user);
   const { chatUserId } = useParams();
+  const navigate = useNavigate();
+  const isMobile = window.innerWidth < 768;
 
-  // Fetch users list
+  // Fetch all users
   useEffect(() => {
     const fetchUsers = async () => {
-      const snapshot = await getDocs(collection(db, "users"));
-      const userList = snapshot.docs.map((doc) => ({
-        uid: doc.id,
-        ...doc.data(),
-      }));
-      setUsers(userList);
+      try {
+        const snapshot = await getDocs(collection(db, "users"));
+        const userList = snapshot.docs.map((doc) => ({
+          uid: doc.id,
+          ...doc.data(),
+        }));
+        setUsers(userList);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
     fetchUsers();
   }, []);
 
-  // Filter users by name and email
-  const filteredUsers = users
-    .filter((u) => u.uid !== user?.uid)
-    .filter((u) =>
-      (u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+  // Fetch messages and build conversations for all users
+  useEffect(() => {
+    if (!user?.email || users.length === 0) return;
+
+    const unsubscribe = fetchMessages((msgs) => {
+      // Create a conversation entry for each user
+      const conversationList = users.map((otherUser) => {
+        // Find messages between the current user and this user
+        const messagesBetween = msgs.filter(
+          (m) =>
+            (m.sender === user.email && m.receiver === otherUser.email) ||
+            (m.receiver === user.email && m.sender === otherUser.email)
+        );
+
+        // If there are messages, get the most recent one
+        let lastMessage = null;
+        let timestamp = null;
+        let sender = null;
+        if (messagesBetween.length > 0) {
+          const mostRecentMessage = messagesBetween.sort(
+            (a, b) => (b.timestamp?.toDate()?.getTime() || 0) - (a.timestamp?.toDate()?.getTime() || 0)
+          )[0];
+          lastMessage = mostRecentMessage.text;
+          timestamp = mostRecentMessage.timestamp;
+          sender = mostRecentMessage.sender === user.email ? "You" : otherUser.displayName || "Unnamed User";
+        }
+
+        return {
+          uid: otherUser.uid,
+          displayName: otherUser.displayName,
+          email: otherUser.email,
+          photoURL: otherUser.photoURL,
+          lastMessage: lastMessage || "No messages yet",
+          timestamp: timestamp,
+          sender: sender || "",
+        };
+      });
+
+      // Sort conversations by timestamp (most recent first, null timestamps last)
+      const sortedConversations = conversationList.sort((a, b) => {
+        const timeA = a.timestamp?.toDate()?.getTime() || 0;
+        const timeB = b.timestamp?.toDate()?.getTime() || 0;
+        return timeB - timeA;
+      });
+
+      setConversations(sortedConversations);
+    });
+
+    return () => unsubscribe();
+  }, [user, users]);
+
+  // Filter conversations for sidebar search
+  const filteredConversations = conversations.filter((conv) =>
+    (conv.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     conv.email?.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   // Fetch receiver info
   useEffect(() => {
@@ -130,10 +178,15 @@ export default function ChatRoom() {
       return;
     }
 
-    await deleteDoc(doc(db, "messages", id));
-    setDeleteConfirmation({ visible: false, messageId: null });
-    setDeleteNotification(true);
-    setTimeout(() => setDeleteNotification(false), 2000);
+    try {
+      await deleteDoc(doc(db, "messages", id));
+      setDeleteConfirmation({ visible: false, messageId: null });
+      setDeleteNotification(true);
+      setTimeout(() => setDeleteNotification(false), 2000);
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      alert("Failed to delete message.");
+    }
   };
 
   const handleCopy = (text) => {
@@ -153,7 +206,6 @@ export default function ChatRoom() {
 
   const handleContextMenu = (e, messageId) => {
     e.preventDefault();
-    const isMobile = window.innerWidth <= 768;
     if (isMobile) {
       const touchX = e.clientX || e.touches[0]?.clientX;
       const touchY = e.clientY || e.touches[0]?.clientY;
@@ -205,65 +257,98 @@ export default function ChatRoom() {
     }
   };
 
+  const handleBackClick = () => {
+    if (isMobile) {
+      navigate("/chat");
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 min-h-screen bg-gray-50 pt-16" onClick={handleOutsideClick}>
-      {/* Sidebar */}
-      <div
-        ref={sidebarRef}
-        className="hidden md:flex flex-col p-4 border-r border-gray-200 bg-white"
-        style={{ height: "calc(100vh4 - 64px)" }}
-      >
-        <div className="fixed w-[28vw] lg:w-[25.2vw]  pl-2 ml-2 pt-3 pr-2 top-16 left-0 lg:left-0 xl:left-0 2xl:left-38 z-10 bg-white pb-4">
-          <input
-            type="text"
-            placeholder="Search users..."
-            className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      {/* Sidebar (Chat List) - Only on larger screens */}
+      {!isMobile && (
         <div
-          className="space-y-2 mt-15 overflow-y-auto"
-          style={{ maxHeight: "calc(100vh - 200px)" }}
+          ref={sidebarRef}
+          className="flex flex-col p-4 border-r border-gray-200 bg-white"
+          style={{ height: "calc(100vh - 64px)" }}
         >
-          {filteredUsers.map((u) => (
-            <Link
-              key={u.uid}
-              to={`/chat/${u.uid}`}
-              className={`flex items-center gap-3 p-3 rounded-xl ${
-                chatUserId === u.uid ? "bg-gray-200" : "hover:bg-gray-100"
-              } transition-all duration-200`}
-            >
-              <img
-                src={u.photoURL || userIcon}
-                alt=""
-                className="h-12 w-12 rounded-full object-cover border-2 border-gray-100"
-              />
-              <span className="truncate text-gray-900 font-medium">{u.displayName}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Chat Panel */}
-      <div className="col-span-1 md:col-span-2 flex flex-col bg-gray-100" 
-      style={{ maxHeight: "calc(100vh - 90px)" }}
-      >
-        {/* Header */}
-        <div className="fixed top-16 left-0 right-0 z-20 bg-white shadow-md p-4 ml-0 md:ml-[33.3%] lg:ml-[35.7%] lg:w-[57vw]">
-          <div className="flex items-center justify-between max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 z-30">
-              <Link to="/chat">
+          <div className="fixed w-[33.3%] lg:w-[25.2%] xl:w-[27%] xl:left-[8%] lg:left-[9%] pl-2 pt-3 pr-2 top-16 left-0 z-10 bg-white pb-4">
+            <div className="flex items-center gap-4">
+              <Link to="/" className="flex items-center">
                 <ArrowLeft size={24} className="text-gray-600 hover:text-indigo-600 transition-colors" />
               </Link>
-              <img
-                src={receiverInfo?.photoURL || userIcon}
-                alt="User"
-                className="h-10 w-10 rounded-full object-cover border-2 border-gray-100"
-              />
-              <h2 className="text-lg font-semibold text-gray-900">
-                {receiverInfo?.displayName || "User"}
-              </h2>
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            className="space-y-2 mt-24 overflow-y-auto"
+            style={{ maxHeight: "calc(100vh - 180px - 64px)" }}
+          >
+            {filteredConversations.length === 0 ? (
+              <p className="text-gray-500 text-center text-sm font-medium py-8">No users found.</p>
+            ) : (
+              filteredConversations.map((conv) => (
+                <Link
+                  key={conv.uid}
+                  to={`/chat/${conv.uid}`}
+                  className={`flex items-center gap-3 p-3 rounded-xl ${
+                    chatUserId === conv.uid ? "bg-gray-200" : "hover:bg-gray-100"
+                  } transition-all duration-200`}
+                >
+                  <img
+                    src={conv.photoURL || userIcon}
+                    alt=""
+                    className="h-12 w-12 rounded-full object-cover border-2 border-gray-100"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold text-gray-900 text-base truncate">
+                        {conv.uid === user.uid ? "You (Self)" : (conv.displayName || "Unnamed User")}
+                      </h3>
+                      <span className="text-gray-500 text-xs">
+                        {conv.timestamp ? dayjs(conv.timestamp.toDate()).format("HH:mm") : ""}
+                      </span>
+                    </div>
+                    <p className="text-gray-500 text-sm truncate">
+                      {conv.sender ? `${conv.sender}: ${conv.lastMessage}` : conv.lastMessage}
+                    </p>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Chat Panel */}
+      <div className={`col-span-1 md:col-span-2 flex flex-col bg-gray-100 ${chatUserId ? 'flex' : 'hidden md:flex'} w-full`}>
+        {/* Header */}
+        <div className="fixed top-16 left-0 right-0 md:left-[33.3%] lg:left-[35.8%] lg:right-[7.5%] z-20 bg-white shadow-md p-4">
+          <div className="flex items-center justify-between max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3 z-30">
+              <button onClick={handleBackClick}>
+                <ArrowLeft size={24} className="text-gray-600 hover:text-indigo-600 transition-colors" />
+              </button>
+              {receiverInfo && (
+                <>
+                  <img
+                    src={receiverInfo?.photoURL || userIcon}
+                    alt="User"
+                    className="h-10 w-10 rounded-full object-cover border-2 border-gray-100"
+                  />
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {receiverInfo?.uid === user.uid ? "You (Self)" : (receiverInfo?.displayName || "User")}
+                  </h2>
+                </>
+              )}
             </div>
 
             {/* Triple Dot Menu */}
@@ -291,7 +376,7 @@ export default function ChatRoom() {
 
         {/* Search bar (only when enabled) */}
         {showSearch && (
-          <div className="fixed top-32 left-0 right-0 z-20 bg-white shadow-md px-4 sm:px-6 lg:px-8 py-3 border-b md:ml-[33.3%]">
+          <div className="fixed top-32 left-0 right-0 md:left-[33.3%] lg:left-[35.8%] lg:right-[7.5%] z-20 bg-white shadow-md px-4 sm:px-6 lg:px-8 py-3 border-b">
             <div className="max-w-5xl mx-auto flex items-center gap-3">
               <input
                 type="text"
@@ -316,8 +401,8 @@ export default function ChatRoom() {
         {/* Messages */}
         <div
           ref={messageContainerRef}
-          className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3 mt-3 md:mt-18"
-          style={{ maxHeight: "calc(100vh - 200px)" }}
+          className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3 mt-16 md:mt-16"
+          style={{ maxHeight: "calc(100vh - 260px)" }}
         >
           {filteredMessages.map((msg, index) => {
             const msgDate = msg.timestamp?.toDate();
@@ -336,16 +421,12 @@ export default function ChatRoom() {
 
                 <div
                   className={`relative max-w-[80%] sm:max-w-[70%] break-words whitespace-pre-wrap ${
-                    isSender
-                      ? "ml-auto"
-                      : "mr-auto"
+                    isSender ? "ml-auto" : "mr-auto"
                   } group`}
                 >
                   <div
                     className={`message-content p-4 rounded-xl shadow-md ${
-                      isSender
-                        ? "bg-indigo-500 text-white"
-                        : "bg-white text-gray-900"
+                      isSender ? "bg-indigo-500 text-white" : "bg-white text-gray-900"
                     }`}
                     onContextMenu={(e) => handleContextMenu(e, msg.id)}
                     onTouchStart={(e) => handleTouchStart(e, msg.id)}
