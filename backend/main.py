@@ -1,65 +1,72 @@
 from fastapi import FastAPI, HTTPException
-from pymongo import MongoClient
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from groq import Groq
+from dotenv import load_dotenv
+import os
+import json
 
-app = FastAPI()
+load_dotenv()
+app = FastAPI(title="AI Chatbot API")
 
-# Enable CORS to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://connectsphere.local", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://connectsphere.local",
+        "http://connectsphere.local:3000",
+        "http://192.168.29.102.nip.io:5173/",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# MongoDB connection
-try:
-    client = MongoClient("mongodb://localhost:27017/")
-    db = client["chatapp"]
-    users_collection = db["users"]
-    # Test the connection
-    client.server_info()  # This will raise an exception if the connection fails
-    print("Successfully connected to MongoDB")
-except Exception as e:
-    print(f"Failed to connect to MongoDB: {str(e)}")
-    raise Exception("MongoDB connection failed")
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# Pydantic model for user data
-class UserUpdate(BaseModel):
-    email: str
-    displayName: str
-    phone: str
-    address: str
-    profileImage: str
+class ChatRequest(BaseModel):
+    user_input: str
+    max_tokens: int = 1024
+    temperature: float = 0.9
+    conversation_history: list = []
 
-# Update user profile endpoint
-@app.put("/api/user/update")
-async def update_user(user: UserUpdate):
+@app.post("/chat")
+async def chat(request: ChatRequest):
     try:
-        print(f"Received update request for email: {user.email}")
-        # Find and update the user in MongoDB
-        result = users_collection.update_one(
-            {"email": user.email},
+        messages = [
             {
-                "$set": {
-                    "displayName": user.displayName,
-                    "phone": user.phone,
-                    "address": user.address,
-                    "profileImage": user.profileImage,
-                }
-            },
+                "role": "system",
+                "content": "You are WeBot, a friendly, engaging, and witty AI assistant. Provide concise, relevant, and creative responses. Avoid repeating introductions unless necessary. Respond naturally, incorporating humor or cultural context when appropriate (e.g., reply to 'Namaste' in a culturally aware way). Use the conversation history to maintain context."
+            }
+        ] + request.conversation_history + [
+            {"role": "user", "content": request.user_input}
+        ]
+
+        completion = groq_client.chat.completions.create(
+            model="llama3-70b-8192",
+            messages=messages,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+            top_p=1,
+            stream=True,
+            stop=None,
         )
 
-        print(f"Update result: matched_count={result.matched_count}, modified_count={result.modified_count}")
+        def generate():
+            updated_history = messages
+            response_text = ""
+            for chunk in completion:
+                content = chunk.choices[0].delta.content or ""
+                response_text += content
+                yield json.dumps({"response": content}) + "\n"
+            updated_history.append({"role": "assistant", "content": response_text})
+            yield json.dumps({"updated_history": updated_history}) + "\n"
 
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail=f"User not found with email: {user.email}")
-
-        return {"message": "Profile updated successfully"}
-    except HTTPException as he:
-        raise he
+        return StreamingResponse(generate(), media_type="text/event-stream")
     except Exception as e:
-        print(f"Error updating user: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/")
+async def root():
+    return {"message": "AI Chatbot API is running!"}

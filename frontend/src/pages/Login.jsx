@@ -2,28 +2,25 @@ import { useState } from "react";
 import { loginWithEmail, loginWithGoogle, loginWithGithub } from "../features/auth/firebaseAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
-
-export const saveUserToFirestore = async (user) => {
-  if (!user) return;
-  const userRef = doc(db, "users", user.uid);
-  await setDoc(userRef, {
-    email: user.email,
-    displayName: user.displayName || user.email,
-    photoURL: user.photoURL || "",
-  }, { merge: true });
-};
+import { useDispatch } from "react-redux";
+import { setUser } from "../features/auth/authSlice";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await loginWithEmail(email, password);
+      const { user } = await loginWithEmail(email, password);
+      dispatch(setUser({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL || "",
+      }));
       toast.success("Logged in!");
       navigate("/chat");
     } catch (err) {
@@ -33,9 +30,14 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     try {
-      const userCredential = await loginWithGoogle();
-      await saveUserToFirestore(userCredential.user);
-      toast.success("Logged in with Google", { autoClose: 300 });
+      const { user, isNewUser } = await loginWithGoogle();
+      dispatch(setUser({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL || "",
+      }));
+      toast.success(isNewUser ? "Signed up and logged in with Google" : "Logged in with Google", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {
       toast.error(err.message);
@@ -44,9 +46,14 @@ export default function Login() {
 
   const handleGithubLogin = async () => {
     try {
-      const userCredential = await loginWithGithub();
-      await saveUserToFirestore(userCredential.user);
-      toast.success("Logged in with GitHub", { autoClose: 300 });
+      const { user, isNewUser } = await loginWithGithub();
+      dispatch(setUser({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL || "",
+      }));
+      toast.success(isNewUser ? "Signed up and logged in with GitHub" : "Logged in with GitHub", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {
       toast.error(err.message);

@@ -2,30 +2,27 @@ import { useState } from "react";
 import { signupWithEmail, loginWithGoogle, loginWithGithub } from "../features/auth/firebaseAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "../firebase/config";
-
-export const saveUserToFirestore = async (user) => {
-  if (!user) return;
-  const userRef = doc(db, "users", user.uid);
-  await setDoc(userRef, {
-    email: user.email,
-    displayName: user.displayName || user.email,
-    photoURL: user.photoURL || "",
-  }, { merge: true });
-};
+import { useDispatch } from "react-redux";
+import { setUser } from "../features/auth/authSlice";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const userCredential = await signupWithEmail(email, password);
-      await saveUserToFirestore(userCredential.user);
-      toast.success("Account created!", { autoClose: 300 });
+      const { user, isNewUser } = await signupWithEmail(email, password, displayName);
+      dispatch(setUser({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL || "",
+      }));
+      toast.success(isNewUser ? "Account created!" : "Signed in!", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {
       toast.error(err.message);
@@ -34,9 +31,14 @@ export default function Signup() {
 
   const handleGoogleSignup = async () => {
     try {
-      const userCredential = await loginWithGoogle();
-      await saveUserToFirestore(userCredential.user);
-      toast.success("Signed in with Google", { autoClose: 300 });
+      const { user, isNewUser } = await loginWithGoogle();
+      dispatch(setUser({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL || "",
+      }));
+      toast.success(isNewUser ? "Signed in with Google" : "Signed in with Google", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {
       toast.error(err.message);
@@ -45,9 +47,14 @@ export default function Signup() {
 
   const handleGithubSignup = async () => {
     try {
-      const userCredential = await loginWithGithub();
-      await saveUserToFirestore(userCredential.user);
-      toast.success("Signed in with GitHub", { autoClose: 300 });
+      const { user, isNewUser } = await loginWithGithub();
+      dispatch(setUser({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL || "",
+      }));
+      toast.success(isNewUser ? "Signed in with GitHub" : "Signed in with GitHub", { autoClose: 300 });
       navigate("/chat");
     } catch (err) {
       toast.error(err.message);
@@ -60,6 +67,16 @@ export default function Signup() {
         <h2 className="text-3xl font-bold text-center text-indigo-600 mb-6">Sign Up</h2>
 
         <form onSubmit={handleSignup} className="space-y-5">
+          <div>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Display Name"
+              className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm placeholder-gray-500"
+              required
+            />
+          </div>
           <div>
             <input
               type="email"

@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./features/auth/firebaseAuth";
 import { setUser, clearUser } from "./features/auth/authSlice";
+import WeBot from './components/WeBot';
 
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
@@ -52,6 +53,7 @@ export default function App() {
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Navbar />
           <AppRoutes />
+          <WeBot />
           <Footer />
           <ToastContainer autoClose={3000} hideProgressBar />
         </BrowserRouter>

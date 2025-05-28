@@ -2,14 +2,16 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     host: '0.0.0.0',
-    allowedHosts: ['connectsphere.local', '192.168.29.102.nip.io'],
+    port: 5173,
+    allowedHosts: ['localhost', '192.168.29.102', 'connectsphere.local', '127.0.0.1', '192.168.29.102.nip.io'],
     hmr: {
-      host: 'connectsphere.local', // use LAN IP or your local domain here
-    }
-  }
+      host: '192.168.29.102',
+      port: 5173,
+      protocol: 'ws',
+    },
+  },
 });

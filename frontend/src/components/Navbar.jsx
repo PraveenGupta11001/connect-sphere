@@ -35,6 +35,16 @@ export default function Navbar() {
     }
   };
 
+  const handleWeBotClick = () => {
+    setIsOpen(false);
+    const weBotButton = document.querySelector("#we-bot-button");
+    if (weBotButton) {
+      weBotButton.click();
+    } else {
+      console.warn("WeBot button not found. Ensure WeBot component is rendered.");
+    }
+  };
+
   useEffect(() => {
     setIsOpen(false);
     setShowOpt(false);
@@ -57,7 +67,7 @@ export default function Navbar() {
   }, [showOpt]);
 
   return (
-    <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
+    <header className="bg-white shadow-md fixed top-0 left-0 right-0 z-40">
       <div className="max-w-8xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link to="/" className="text-2xl font-bold text-indigo-600 tracking-wide">
           WeConnect
@@ -132,7 +142,7 @@ export default function Navbar() {
 
         {/* Mobile view (smaller screens) */}
         <div className="md:hidden flex items-center space-x-3">
-          {user && (
+          {user ? (
             <button
               onClick={() => navigate("/profile")}
               className="focus:outline-none"
@@ -144,7 +154,7 @@ export default function Navbar() {
                 className="w-8 h-8 rounded-full object-cover"
               />
             </button>
-          )}
+          ) : null}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="focus:outline-none"
@@ -178,6 +188,12 @@ export default function Navbar() {
           >
             Chat
           </Link>
+          <button
+            onClick={handleWeBotClick}
+            className="text-gray-700 hover:text-indigo-600 text-left"
+          >
+            WeBot
+          </button>
 
           {!user ? (
             <>

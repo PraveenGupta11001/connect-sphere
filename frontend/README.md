@@ -101,3 +101,14 @@ export default defineConfig({
 })
 
 
+
+### set https certificates
+# Install mkcert (macOS example)
+brew install mkcert
+# Create certificate for connectsphere.local and nip.io
+mkcert connectsphere.local 192.168.29.102.nip.io localhost 127.0.0.1
+# Install certificate
+mkcert -install
+# Move certificates to project root
+mv connectsphere.local+3.pem connectsphere.local+2.pem
+mv connectsphere.local+3-key.pem connectsphere.local+2-key.pem

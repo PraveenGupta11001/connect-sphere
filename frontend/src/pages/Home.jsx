@@ -7,8 +7,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
-import Test from "./Test";
-
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [user, setUser] = useState(null);
