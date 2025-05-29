@@ -157,47 +157,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Video Showcase Section */}
-      <div className="w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-12 bg-gray-900 text-white">
-        <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10">
-          See WeBot in Action
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {[
-            {
-              title: "WeBot Chat Demo",
-              url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-              desc: "Watch how WeBot handles real-time conversations with ease.",
-            },
-            {
-              title: "Voice Interaction Tutorial",
-              url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-              desc: "Learn how to use voice commands with WeBot’s speech recognition.",
-            },
-          ].map((video, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="relative"
-            >
-              <div className="relative aspect-video rounded-xl overflow-hidden shadow-lg">
-                <iframe
-                  src={video.url}
-                  title={video.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                ></iframe>
-              </div>
-              <h3 className="text-xl font-semibold mt-4">{video.title}</h3>
-              <p className="text-sm text-gray-300 mt-2">{video.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
       {/* Call to Action Section */}
       <div className="w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-16 text-center">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
@@ -237,7 +196,7 @@ export default function Home() {
             <div>
               <h4 className="text-lg font-semibold text-white mb-4">Support</h4>
               <ul className="space-y-2">
-                <li><Link to="#" className="hover:text-white transition-colors">FAQ</Link></li>
+                <li><a href="#faq" className="hover:text-white transition-colors">FAQ</a></li>
                 <li><a href="mailto:praweengupta11001@gmail.com" className="hover:text-white transition-colors">Contact Us</a></li>
                 <li><Link to="#" className="hover:text-white transition-colors">Help Center</Link></li>
               </ul>

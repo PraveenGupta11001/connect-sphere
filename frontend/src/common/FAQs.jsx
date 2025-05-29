@@ -10,12 +10,12 @@ export default function FAQs() {
   };
 
   return (
-    <div className='w-full lg:w-[70%] m-2 md:text-xl flex flex-col'>
+    <div className='w-full lg:w-[70%] m-2 md:text-xl flex flex-col' id="faq">
       <h1 className='ml-4 pt-4 mb-2 text-xl lg:text-2xl text-indigo-500 font-bold'>
         FAQs (Frequently Asked Questions)
       </h1>
 
-      {faq_question.faqs.slice(0, 3).map((item, i) => {
+      {faq_question.faqs.slice(0, 5).map((item, i) => {
         const isOpen = expanded === item.answer;
 
         return (

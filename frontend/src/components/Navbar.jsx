@@ -81,6 +81,10 @@ export default function Navbar() {
           <Link to="/chat" className="text-gray-700 hover:text-indigo-600 transition">
             Chat
           </Link>
+          <a href="https://drive.google.com/file/d/1Evzo2cpVyEuyikSokgjIl6cneOM_t9rd/view?usp=drive_link" target="_blank" className="text-gray-700 hover:text-indigo-600 transition">
+            Devs Profile
+          </a>
+          
 
           {!user ? (
             <>
@@ -142,6 +146,9 @@ export default function Navbar() {
 
         {/* Mobile view (smaller screens) */}
         <div className="md:hidden flex items-center space-x-3">
+        <a href="https://drive.google.com/file/d/1Evzo2cpVyEuyikSokgjIl6cneOM_t9rd/view?usp=drive_link" target="_blank" className="text-gray-700 hover:text-indigo-600 transition">
+            Devs
+          </a>
           {user ? (
             <button
               onClick={() => navigate("/profile")}
