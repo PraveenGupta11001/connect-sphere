@@ -24,7 +24,7 @@ app.add_middleware(
         "https://192.168.29.102.nip.io:5173",
         "https://127.0.0.1:5173",
         "https://192.168.29.102.nip.io",
-        "https://we-connect-teal.vercel.app/",
+        "https://we-connect-teal.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
