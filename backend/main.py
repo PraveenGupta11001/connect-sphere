@@ -12,12 +12,12 @@ app = FastAPI(title="AI Chatbot API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-        # "http://localhost:3000",
-        # "http://connectsphere.local",
-        # "http://connectsphere.local:3000",
-        # "http://192.168.29.102.nip.io:5173/",
-    # ],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://connectsphere.local",
+        "http://connectsphere.local:3000",
+        "http://192.168.29.102.nip.io:5173/",
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

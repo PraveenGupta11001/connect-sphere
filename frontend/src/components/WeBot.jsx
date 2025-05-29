@@ -6,8 +6,12 @@ export default function WeBot() {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const chatContainerRef = useRef(null);
   const [conversationHistory, setConversationHistory] = useState([]);
+
+  // Backend URL
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://192.168.29.102:8000';
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -31,7 +35,7 @@ export default function WeBot() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://192.168.29.102:8000/chat', {
+      const response = await fetch(`${BACKEND_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -101,6 +105,111 @@ export default function WeBot() {
       e.preventDefault();
       handleSendMessage(e);
     }
+  };
+
+  const handleVoiceInput = () => {
+    if (!window.isSecureContext) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'WeBot',
+          text: 'Voice input requires a secure connection (HTTPS). Please enable HTTPS or use text input.',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'WeBot',
+          text: 'Voice input is not supported in this browser. Please use Chrome or Edge.',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'WeBot',
+          text: 'Microphone access is not supported in this browser.',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        setIsRecording(true);
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setUserInput(transcript);
+          setIsRecording(false);
+          handleSendMessage({ preventDefault: () => {} });
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          setIsRecording(false);
+          let errorMessage = 'Oops, couldn’t hear you. Try again!';
+          if (event.error === 'not-allowed') {
+            errorMessage = 'Microphone access is blocked. Please allow microphone access.';
+          } else if (event.error === 'no-speech') {
+            errorMessage = 'No speech detected. Please speak clearly.';
+          }
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: 'WeBot',
+              text: errorMessage,
+              timestamp: new Date().toISOString(),
+            },
+          ]);
+        };
+
+        recognition.onend = () => {
+          setIsRecording(false);
+        };
+
+        try {
+          recognition.start();
+        } catch (error) {
+          console.error('Error starting recognition:', error);
+          setIsRecording(false);
+          setMessages((prev) => [
+            ...prev,
+            {
+              sender: 'WeBot',
+              text: 'Failed to start voice input. Please check your microphone.',
+              timestamp: new Date().toISOString(),
+            },
+          ]);
+        }
+      })
+      .catch((error) => {
+        console.error('Microphone access error:', error);
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: 'WeBot',
+            text: 'Microphone access is blocked. Please allow microphone access.',
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      });
   };
 
   return (
@@ -237,9 +346,9 @@ export default function WeBot() {
               />
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || isRecording}
                 className={`bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  isLoading || isRecording ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 aria-label="Send message"
               >
@@ -255,6 +364,32 @@ export default function WeBot() {
                     strokeLinejoin="round"
                     strokeWidth="2"
                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  ></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={handleVoiceInput}
+                disabled={isLoading || isRecording}
+                className={`p-2 rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  isRecording
+                    ? 'bg-red-500 text-white animate-pulse'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                } ${isLoading || isRecording ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-label="Voice input"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
                   ></path>
                 </svg>
               </button>
