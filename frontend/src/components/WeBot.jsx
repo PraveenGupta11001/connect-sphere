@@ -10,7 +10,7 @@ export default function WeBot() {
   const [conversationHistory, setConversationHistory] = useState([]);
 
   // Backend URL (HTTPS)
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://192.168.29.102.nip.io:8000';
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://192.168.29.102.nip.io/api';
 
   // Scroll to bottom when messages change
   useEffect(() => {

@@ -1,8 +1,6 @@
-### How to run and set certification to unsecure urls
-
-Setting Up HTTPS with mkcert for ConnectSphere WeBot
-This guide explains how to set up HTTPS for the ConnectSphere WeBot project using mkcert to create locally trusted SSL certificates. It covers installing mkcert, generating certificates, configuring the FastAPI backend (~/Desktop/ConnectSphere-Frontend/backend/main.py) and React frontend (~/Desktop/ConnectSphere-Frontend/frontend/src/WeBot.jsx), running both servers, and verifying the setup. The backend runs at https://192.168.29.102.nip.io:8000 and the frontend at https://192.168.29.102.nip.io:5173.
-Project Paths:
+Setting Up HTTPS with mkcert, nginx, and Vercel for ConnectSphere WeBot
+This guide sets up HTTPS for the ConnectSphere WeBot project using mkcert for local SSL certificates, nginx as a reverse proxy to achieve portless URLs (https://192.168.29.102.nip.io and https://connectsphere.local for the frontend, /api for the backend), and Vercel for hosting the frontend. The backend runs locally with FastAPI on port 8000, proxied via nginx. It covers certificate generation, server configuration, Vercel deployment, and verification for local and hosted setups.
+Paths:
 
 Backend: ~/Desktop/ConnectSphere-Frontend/backend/main.py
 Frontend: ~/Desktop/ConnectSphere-Frontend/frontend/src/WeBot.jsx
@@ -11,295 +9,273 @@ Certificates: ~/Desktop/ConnectSphere-Frontend/backend/certs/
 
 Prerequisites
 
-OS: Ubuntu/Linux (adjust for other OS)
-Tools: curl, git, python3, pip, nodejs, npm
-Project: Cloned at ~/Desktop/ConnectSphere-Frontend
-Ports: 8000 (backend), 5173 (frontend) free
-Groq API Key: Stored in ~/Desktop/ConnectSphere-Frontend/backend/.env
+OS: Ubuntu/Linux
+Tools: curl, git, python3, pip, nodejs, npm, vercel, nginx
+Ports: 8000 (backend), 5173 (frontend local dev) free
+Accounts: Vercel, Groq API key (in ~/Desktop/ConnectSphere-Frontend/backend/.env)
+/etc/hosts:192.168.29.102 connectsphere.local
+
+
 
 Step 1: Install mkcert
-mkcert creates locally trusted SSL certificates for development.
 
 Install Dependencies:
 sudo apt update
 sudo apt install libnss3-tools
 
 
-Download and Install mkcert:
+Install mkcert:
 wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
 sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
 sudo chmod +x /usr/local/bin/mkcert
 
 
-Verify Installation:
+Verify:
 mkcert --version
 
-Expected: v1.4.4
 
-Install Local CA:
+Install CA:
 mkcert -install
 
-This creates a local Certificate Authority (CA) trusted by your system.
 
 
-Step 2: Generate SSL Certificates
-Create certificates for 192.168.29.102.nip.io, localhost, connectsphere.local, and 127.0.0.1.
+Step 2: Generate Certificates
 
-Navigate to Certificates Directory:
+Create Directory:
 cd ~/Desktop/ConnectSphere-Frontend/backend
 mkdir -p certs
 cd certs
 
 
-Generate Certificates:
+Generate:
 mkcert 192.168.29.102.nip.io localhost connectsphere.local 127.0.0.1
 
-This generates:
 
-192.168.29.102.nip.io+3.pem (certificate)
-192.168.29.102.nip.io+3-key.pem (private key)
+Verify:
+ls ~/Desktop/ConnectSphere-Frontend/backend/certs/
 
-
-Verify Files:
-ls ~/Desktop/ConnectSphere-Frontend/backend/certs
-
-Expected: 192.168.29.102.nip.io+3-key.pem  192.168.29.102.nip.io+3.pem
-
-Validate Certificate:
-openssl x509 -in ~/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3.pem -text -noout
-
-Check for:
-
-Issuer: mkcert ...
-Subject: Includes 192.168.29.102.nip.io, localhost, etc.
-Validity: Not expired
+Expected: 192.168.29.102.nip.io+3.pem, 192.168.29.102.nip.io+3-key.pem
 
 
+Step 3: Configure nginx Reverse Proxy
 
-Step 3: Configure and Run Backend
-The FastAPI backend (main.py) serves the WeBot API at https://192.168.29.102.nip.io:8000 with HTTPS.
+Install nginx:
+sudo apt install -y nginx
+
+
+Copy Certificates:
+sudo mkdir -p /etc/nginx/certs
+sudo cp ~/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3.pem /etc/nginx/certs/
+sudo cp ~/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3-key.pem /etc/nginx/certs/
+
+
+Create Config:
+sudo nano /etc/nginx/sites-available/connectsphere
+
+Add:
+server {
+    listen 443 ssl;
+    server_name 192.168.29.102.nip.io connectsphere.local;
+
+    ssl_certificate /etc/nginx/certs/192.168.29.102.nip.io+3.pem;
+    ssl_certificate_key /etc/nginx/certs/192.168.29.102.nip.io+3-key.pem;
+
+    location / {
+        proxy_pass https://localhost:5173;
+        proxy_ssl_verify off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
+        proxy_pass https://localhost:8000/;
+        proxy_ssl_verify off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+
+Enable and Restart:
+sudo ln -s /etc/nginx/sites-available/connectsphere /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl restart nginx
+
+
+
+Step 4: Configure and Run Backend
 
 Ensure .env:
+echo "GROQ_API_KEY=your_key_here" > ~/Desktop/ConnectSphere-Frontend/backend/.env
 cat ~/Desktop/ConnectSphere-Frontend/backend/.env
 
-Example:
-GROQ_API_KEY=your_groq_api_key_here
 
-If missing, create it:
-echo "GROQ_API_KEY=your_key_here" > ~/Desktop/ConnectSphere-Frontend/backend/.env
-
-
-Install Backend Dependencies:
+Install Dependencies:
 cd ~/Desktop/ConnectSphere-Frontend/backend
 pip install uvicorn[standard] groq python-dotenv fastapi pydantic
 
 
-Run Backend:Start the FastAPI server with HTTPS using the mkcert certificates:
+Run Backend with SSL:
 cd ~/Desktop/ConnectSphere-Frontend/backend
 uvicorn main:app --host 0.0.0.0 --port 8000 \
---ssl-keyfile /home/your-username/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3-key.pem \
---ssl-certfile /home/your-username/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3.pem \
+--ssl-keyfile /home/praveen/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3-key.pem \
+--ssl-certfile /home/praveen/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3.pem \
 --reload
 
 
-Replace your-username with your actual username (e.g., praveen).
-The --reload flag enables auto-reload for development.
-Check the terminal for startup messages or errors (e.g., certificate issues, Groq API key errors).
-Ensure port 8000 is free:lsof -i :8000
+Check Port:
+lsof -i :8000
 sudo kill -9 <pid>
 
 
 
+Step 5: Configure and Run Frontend Locally
 
-
-Step 4: Configure and Run Frontend
-The React frontend (WeBot.jsx) runs at https://192.168.29.102.nip.io:5173 and connects to the backend.
-
-Update .env:Set the backend URL to HTTPS:
-echo "VITE_BACKEND_URL=https://192.168.29.102.nip.io:8000" > ~/Desktop/ConnectSphere-Frontend/frontend/.env
+Update .env:
+echo "VITE_BACKEND_URL=https://192.168.29.102.nip.io/api" > ~/Desktop/ConnectSphere-Frontend/frontend/.env
 cat ~/Desktop/ConnectSphere-Frontend/frontend/.env
 
 
-Install Frontend Dependencies:
+Install Dependencies:
 cd ~/Desktop/ConnectSphere-Frontend/frontend
 npm install
 
 
-Run Frontend:Start the Vite development server with HTTPS:
-cd ~/Desktop/ConnectSphere-Frontend/frontend
+Run Locally:
 npm run dev -- --host
 
 
-The --host flag exposes the server to the network (e.g., 192.168.29.102.nip.io:5173).
-Check the terminal for Vite’s startup URL (should include https).
-If Vite fails, verify vite.config.js certificate paths:import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
-import path from 'path';
-import fs from 'fs';
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: {
-    host: '0.0.0.0',
-    port: 5173,
-    https: {
-      cert: fs.readFileSync(path.resolve(__dirname, '../backend/certs/192.168.29.102.nip.io+3.pem')),
-      key: fs.readFileSync(path.resolve(__dirname, '../backend/certs/192.168.29.102.nip.io+3-key.pem')),
-    },
-    allowedHosts: ['localhost', '192.168.29.102', 'connectsphere.local', '127.0.0.1', '192.168.29.102.nip.io'],
-    hmr: {
-      host: '192.168.29.102.nip.io',
-      port: 5173,
-      protocol: 'wss',
-    },
-  },
-});
+Step 6: Deploy Frontend to Vercel
+
+Install Vercel CLI:
+sudo npm install -g vercel
 
 
+Verify:
+vercel --version
+
+
+Login:
+vercel login
+
+
+Deploy:
+cd ~/Desktop/ConnectSphere-Frontend/frontend
+vercel
+vercel --prod
+
+
+Project name: connectsphere
+Framework: Vite
+Build: npm run build
+Output: dist
+Environment variable: VITE_BACKEND_URL=https://192.168.29.102.nip.io/api
+
+
+Map Domains:
+
+In Vercel Dashboard → Project → Domains, add 192.168.29.102.nip.io and connectsphere.local.
+Or:vercel domains add 192.168.102.nip.io
 
 
 
-Step 5: Verify Setup
-Test both backend and frontend to ensure HTTPS works and the WeBot functions (including microphone).
-Backend Tests
 
-Test GET /:
-curl -k https://192.168.29.102.nip.io:8000
 
-Expected: {"message":"AI Chatbot API is running!"}
+Step 7: Configure Authentication (Optional, if using Firebase Auth or similar)
 
-Test POST /chat:
-curl -k -X POST https://192.168.29.102.nip.io:8000/chat \
+Add Authorized Domains:
+In Firebase Console → Authentication → Settings → Authorized Domains, add 192.168.29.102.nip.io, connectsphere.local, and the Vercel URL (e.g., connectsphere.vercel.app).
+
+
+
+Step 8: Verify Setup
+Local Setup
+
+Backend:
+
+
+
+
+
+curl -k https://192.168.29.102.nip.io/apicurl -k https://connectsphere.local/apicurl -k -X -POST https://192.168.29.102.nip.io/api/chat \
+
 -H "Content-Type: application/json" \
--d '{"user_input":"Namaste","max_tokens":1024,"temperature":0.9,"conversation_history":[]}'
-
-Expected: Streaming JSON response (e.g., {"response":"Namaste! How can I assist you today?"}).
-
-Postman:
-
-URL: https://192.168.29.102.nip.io:8000/chat
-Method: POST
-Headers: Content-Type: application/json
-Body:{
-    "user_input": "Namaste",
-    "max_tokens": 1024,
-    "temperature": 0.9,
-    "conversation_history": []
-}
-
-
-Disable SSL verification (Settings → General → SSL certificate verification → Off).
-
-
-Check Logs:
-tail -f ~/Desktop/ConnectSphere-Frontend/backend/*.log
-
-Look for errors like “Groq API error” or “Unexpected error”.
-
-
-Frontend Tests
-
-Open Frontend:
-
-URL: https://192.168.29.102.nip.io:5173
-Browser: Chrome or Edge
-Action: Accept the self-signed certificate warning (“Advanced” → “Proceed”).
-
-
-Test WeBot:
-
-Open the WeBot chat (click the chat icon).
-Send a text message (e.g., “Namaste”).
-Verify the response appears from WeBot.
-Test the microphone button:
-Click the microphone.
-Allow microphone access.
-Speak and verify the transcript sends as a message.
+-d '{"user_input":"Namaste","max_tokens":1024,"temperature":0.9,"conversation_history_id":""}'
 
 
 
 
-Check DevTools:
+Frontend:
 
-Open DevTools (F12) → Console/Network.
-Ensure no CORS or fetch errors.
-Verify POST https://192.168.29.102.nip.io:8000/chat requests succeed.
+Open https://192.168.29.102.nip.io and https://connectsphere.local.
+Accept self-signed certificate warnings in Chrome.
+Test WeBot: Send text (“Namaste”), test microphone, check auth flows.
+Check DevTools (F12) for CORS/fetch errors.
 
 
-Test Large Conversation:
 
-Send multiple long messages.
-Expect a message like “Conversation too long! Please refresh to start a new chat” if the history exceeds ~6000 tokens.
-Refresh the page and verify the chat resets.
+Vercel Hosted
+
+Frontend:
+
+Open https://192.168.29.102.nip.io, https://connectsphere.local, or Vercel URL (e.g., https://connectsphere.vercel.app).
+Test WeBot features and auth.
+
+
+Backend:
+Run 
+
+cd ~/Desktop/ConnectSphere-Frontend/backend
+uvicorn main:app --host 0.0.0.0 --port 8000 \
+--ssl-keyfile /home/praveen/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3-key.pem \
+--ssl-certfile /home/praveen/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3.pem \
+--reload
 
 
 
 Troubleshooting
 
-Backend Not Responding:
-
-Check Uvicorn:lsof -i :8000
-
-Kill processes if needed:sudo kill -9 <pid>
+Vercel CLI:
+sudo npm install -g vercel
+source ~/.bashrc
 
 
-Verify certificates:ls ~/Desktop/ConnectSphere-Frontend/backend/certs
+Backend:
+lsof -i :8000
+sudo kill -9 <pid>
 
 
-Re-run backend with absolute paths.
+nginx:
+sudo tail -f /var/log/nginx/error.log
+sudo tail -f /var/log/nginx/access.log
 
 
-SSL Errors:
+CORS:
 
-If curl fails with wrong version number:curl http://192.168.29.102.nip.io:8000
-
-If HTTP works, Uvicorn isn’t using SSL. Re-run with correct SSL flags.
-Validate certificates:openssl s_client -connect 192.168.29.102.nip.io:8000 -showcerts
+Verify main.py CORS allows https://192.168.29.102.nip.io, https://connectsphere.local, and Vercel URL.
 
 
+Auth:
+
+Check DevTools for errors.
+Ensure domains are whitelisted.
 
 
-CORS Errors:
-
-Check backend logs for CORS issues.
-Ensure main.py CORS includes https://192.168.29.102.nip.io:5173.
-
-
-Microphone Not Working:
-
-Verify window.isSecureContext is true in DevTools console.
-Test in Chrome/Edge.
-Ensure browser trusts the certificate.
-
-
-Groq API Issues:
-
-Verify API key:cat ~/Desktop/ConnectSphere-Frontend/backend/.env
-
-
-Test Groq:from groq import Groq
-client = Groq(api_key="your_key_here")
-response = client.chat.completions.create(model="llama3-70b-8192", messages=[{"role":"user","content":"test"}])
-print(response)
-
-
-#### How to run cmds for backend and frontend for local -
-backend 
-
-uvicorn main:app --host 0.0.0.0 --port 8000 --ssl-keyfile /home/praveen/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3-key.pem --ssl-certfile /home/praveen/Desktop/ConnectSphere-Frontend/backend/certs/192.168.29.102.nip.io+3.pem --reload
-
-frontend 
-
-npx vite --host
+SSL:
+openssl s_client -connect 192.168.29.102.nip.io:8000 -showcerts
 
 
 
 Notes
 
-Certificates: mkcert is for development only. For production, use Let’s Encrypt or a trusted CA.
-Security: Ensure your Groq API key is secure and not exposed.
-Paths: Adjust paths if your project is moved (e.g., replace /home/your-username with your actual path).
-Date: Guide updated on May 29, 2025.
+Date: May 29, 2025, 03:30 PM IST
+Username: Replace praveen as needed.
+Certificates: mkcert is for development. Use Let’s Encrypt for production.
+Security: Keep Groq API key secure.
 
-For issues, contact the project maintainer or check logs for detailed errors.

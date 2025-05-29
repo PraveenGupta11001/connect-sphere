@@ -7,6 +7,8 @@
 - npm i @google/genai
 - npm install dayjs
 - npm install compressorjs
+- npm install firebase-tools
+- sudo npm install -g firebase-tools
 
 
 
