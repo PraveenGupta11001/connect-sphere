@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-// import './WeBot.css';
 
 export default function WeBot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,8 +9,8 @@ export default function WeBot() {
   const chatContainerRef = useRef(null);
   const [conversationHistory, setConversationHistory] = useState([]);
 
-  // Backend URL
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://192.168.29.102:8000';
+  // Backend URL (HTTPS)
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://192.168.29.102.nip.io:8000';
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -44,6 +43,7 @@ export default function WeBot() {
           temperature: 0.9,
           conversation_history: conversationHistory,
         }),
+        credentials: 'include',
       });
 
       if (!response.ok) {

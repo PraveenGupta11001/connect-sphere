@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -6,24 +6,35 @@ from groq import Groq
 from dotenv import load_dotenv
 import os
 import json
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 app = FastAPI(title="AI Chatbot API")
 
+# Updated CORS for HTTPS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://connectsphere.local",
-        "http://connectsphere.local:3000",
-        "http://192.168.29.102.nip.io:5173/",
+        "https://localhost:5173",
+        "https://connectsphere.local:5173",
+        "https://192.168.29.102.nip.io:5173",
+        "https://127.0.0.1:5173",
     ],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+try:
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    logger.info("Groq client initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize Groq client: {e}")
+    raise
 
 class ChatRequest(BaseModel):
     user_input: str
@@ -32,7 +43,8 @@ class ChatRequest(BaseModel):
     conversation_history: list = []
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, http_request: Request):
+    logger.info(f"Request origin: {http_request.headers.get('origin')}")
     try:
         messages = [
             {
@@ -65,6 +77,7 @@ async def chat(request: ChatRequest):
 
         return StreamingResponse(generate(), media_type="text/event-stream")
     except Exception as e:
+        logger.error(f"Error in /chat endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
