@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: weconnect-api
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port 10000"
+    envVars:
+      - key: GROQ_API_KEY
+        value: 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
