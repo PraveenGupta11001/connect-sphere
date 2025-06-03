@@ -1,7 +1,3 @@
-Perfect! Here’s your fully updated and **detailed** `README.md` with the new project name **WeConnect** instead of ConnectSphere. You can copy and paste this directly into your repository’s `README.md` file:
-
----
-
 ```markdown
 # WeConnect 🌐
 
